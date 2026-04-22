@@ -94,9 +94,11 @@ help() {
   echo "                                                              Default: Whatever version is set in pom.xml of the Spring Boot 4 app"
   echo "                                                              NOTE: Its a good practice to set this manually to ensure proper version"
   echo "  --tests <TESTS_TO_RUN>                                  The tests to run, separated by commas"
-  echo "                                                              Accepted values (1 or more of): test-build, measure-build-times, measure-time-to-first-request, measure-rss, run-load-test"
-  echo "                                                              Default: 'test-build,measure-build-times,measure-time-to-first-request,measure-rss,run-load-test'"
+  echo "                                                              Accepted values (1 or more of): measure-build-times, measure-time-to-first-request, measure-rss, run-load-test"
+  echo "                                                              Default: 'measure-time-to-first-request,measure-rss,run-load-test'"
+  echo "                                                              NOTE: Build times (measure-build-times) are always measured during the build phase"
   echo "  --user <USER>                                           The user on <HOST> to run the benchmark"
+  echo "  --use-container-host-network                            Use host networking instead of port mapping on infra containers"
   echo "  --wait-time <WAIT_TIME>                                 Wait time (in seconds) to wait for things like application startup"
   echo "                                                              Default: ${WAIT_TIME}"
 }
@@ -161,6 +163,7 @@ print_values() {
   echo "  SCM_REPO_URL: $SCM_REPO_URL"
   echo "  SCM_REPO_BRANCH: $SCM_REPO_BRANCH"
   echo "  DROP_OS_FILESYSTEM_CACHES: $DROP_OS_FILESYSTEM_CACHES"
+  echo "  USE_CONTAINER_HOST_NETWORK: $USE_CONTAINER_HOST_NETWORK"
   echo "  JVM_ARGS: $JVM_ARGS"
   echo "  EXTRA_QDUP_ARGS: $EXTRA_QDUP_ARGS"
   echo "  OUTPUT_DIR: $OUTPUT_DIR"
@@ -259,7 +262,7 @@ run_benchmarks() {
 
 #  jbang qDup@hyperfoil --trace="target" \
 
-${JBANG_CMD} io.hyperfoil.tools:qDup:0.10.8 \
+${JBANG_CMD} io.hyperfoil.tools:qDup:0.11.0 \
     -B ${OUTPUT_DIR} \
     -ix \
     ${EXTRA_QDUP_ARGS} \
@@ -293,6 +296,7 @@ ${JBANG_CMD} io.hyperfoil.tools:qDup:0.10.8 \
     -S config.run.description="${DESCRIPTION}" \
     -S config.run.identifier="${RUN_IDENTIFIER}" \
     -S config.run.dropOsFilesystemCaches=${DROP_OS_FILESYSTEM_CACHES} \
+    -S config.run.useContainerHostNetwork=${USE_CONTAINER_HOST_NETWORK} \
     -S env.run.host.user=${USER} \
     -S env.run.host.target=${target} \
     -S env.run.host.name=${HOST} \
@@ -332,15 +336,18 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   QUARKUS_BUILD_CONFIG_ARGS=""
   QUARKUS_VERSION=""
   ALLOWED_RUNTIMES=("quarkus3-jvm" "quarkus3-leyden" "quarkus3-virtual" "quarkus3-virtual-leyden" "quarkus3-native" "spring3-jvm" "spring3-leyden" "spring3-virtual" "spring3-virtual-leyden" "spring3-jvm-aot" "spring3-native" "spring4-jvm" "spring4-leyden" "spring4-virtual" "spring4-virtual-leyden" "spring4-jvm-aot" "spring4-native")
-  RUNTIMES=${ALLOWED_RUNTIMES[@]}
+  DEFAULT_RUNTIMES=("quarkus3-jvm" "quarkus3-leyden" "quarkus3-virtual" "quarkus3-virtual-leyden" "quarkus3-native" "spring3-jvm" "spring3-leyden" "spring3-virtual" "spring3-virtual-leyden" "spring3-native" "spring4-jvm" "spring4-leyden" "spring4-virtual" "spring4-virtual-leyden" "spring4-native")
+  RUNTIMES=${DEFAULT_RUNTIMES[@]}
   SPRING_BOOT3_VERSION=""
   SPRING_BOOT4_VERSION=""
-  ALLOWED_TESTS_TO_RUN=("test-build" "measure-build-times" "measure-time-to-first-request" "measure-rss" "run-load-test")
-  TESTS_TO_RUN=${ALLOWED_TESTS_TO_RUN[@]}
+  ALLOWED_TESTS_TO_RUN=("measure-build-times" "measure-time-to-first-request" "measure-rss" "run-load-test")
+  DEFAULT_TESTS_TO_RUN=("measure-time-to-first-request" "measure-rss" "run-load-test")
+  TESTS_TO_RUN=${DEFAULT_TESTS_TO_RUN[@]}
   USER=""
   JVM_MEMORY="-Xms512m -Xmx512m"
   WAIT_TIME="20"
   DROP_OS_FILESYSTEM_CACHES=false
+  USE_CONTAINER_HOST_NETWORK=false
   JVM_ARGS=""
   EXTRA_QDUP_ARGS=""
   OUTPUT_DIR="/tmp"
@@ -375,6 +382,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
       --drop-fs-caches)
         DROP_OS_FILESYSTEM_CACHES=true
+        shift
+        ;;
+
+      --use-container-host-network)
+        USE_CONTAINER_HOST_NETWORK=true
         shift
         ;;
 
@@ -563,6 +575,15 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         ;;
     esac
   done
+
+  # Strip measure-build-times from TESTS_TO_RUN - it always runs during the build phase
+  filtered_tests=()
+  for item in ${TESTS_TO_RUN[@]}; do
+    if [[ "$item" != "measure-build-times" ]]; then
+      filtered_tests+=("$item")
+    fi
+  done
+  TESTS_TO_RUN=${filtered_tests[@]}
 
   validate_values
   calculate_scenario
