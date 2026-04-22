@@ -1,0 +1,46 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.quarkus</groupId>
+        <artifactId>spring-quarkus-perf-comparison</artifactId>
+        <version>1.0</version>
+    </parent>
+
+    <artifactId>openapi</artifactId>
+    <packaging>jar</packaging>
+    <name>openapi</name>
+    <description>OpenAPI specification and validation module</description>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.openapitools.openapistylevalidator</groupId>
+                <artifactId>openapi-style-validator-maven-plugin</artifactId>
+                <version>1.11</version>
+                <executions>
+                    <execution>
+                        <id>validate-openapi-spec</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                        <configuration>
+                            <inputFile>${project.basedir}/src/main/resources/openapi.yaml</inputFile>
+                            <validateInfoDescription>true</validateInfoDescription>
+                            <validateInfoLicense>false</validateInfoLicense>
+                            <validateInfoContact>false</validateInfoContact>
+                            <validateOperationDescription>true</validateOperationDescription>
+                            <validateOperationTag>true</validateOperationTag>
+                            <validateModelPropertiesDescription>true</validateModelPropertiesDescription>
+                            <validateModelPropertiesExample>true</validateModelPropertiesExample>
+                            <validateModelNoLocalDef>true</validateModelNoLocalDef>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

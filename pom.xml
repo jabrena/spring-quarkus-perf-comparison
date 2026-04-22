@@ -9,6 +9,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>openapi</module>
         <module>quarkus3</module>
 	      <module>quarkus3-virtual</module>
         <module>quarkus3-spring-compatibility</module>

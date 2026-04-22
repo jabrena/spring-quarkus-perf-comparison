@@ -1,0 +1,174 @@
+openapi: 3.0.3
+info:
+  title: Fruits API
+  description: API for listing, retrieving, and creating fruits with optional store pricing details.
+  version: "1.0.0"
+paths:
+  /fruits:
+    get:
+      operationId: getAllFruits
+      summary: List all fruits
+      description: Returns all fruits available in the catalog.
+      tags:
+        - Fruits
+      responses:
+        "200":
+          description: List of fruits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FruitDTO"
+    post:
+      operationId: addFruit
+      summary: Create a fruit
+      description: Creates a new fruit entry and returns the persisted representation.
+      tags:
+        - Fruits
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FruitDTO"
+      responses:
+        "200":
+          description: Created fruit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FruitDTO"
+
+  /fruits/{name}:
+    get:
+      operationId: getFruitByName
+      summary: Get fruit by name
+      description: Returns a fruit by its unique name when it exists.
+      tags:
+        - Fruits
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Fruit found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FruitDTO"
+        "404":
+          description: Fruit not found
+
+components:
+  schemas:
+    FruitDTO:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique fruit identifier.
+          example: 1
+        name:
+          type: string
+          minLength: 1
+          description: Fruit name.
+          example: Apple
+        description:
+          type: string
+          description: Human-readable fruit description.
+          example: Crisp and sweet fruit.
+        storePrices:
+          type: array
+          description: Prices of this fruit in different stores.
+          example:
+            - store:
+                id: 10
+                name: Downtown Market
+                currency: USD
+                address:
+                  address: 123 Main St
+                  city: Springfield
+                  country: USA
+              price: 2.49
+          items:
+            $ref: "#/components/schemas/StoreFruitPriceDTO"
+
+    StoreFruitPriceDTO:
+      type: object
+      properties:
+        store:
+          $ref: "#/components/schemas/StoreDTO"
+          description: Store where the fruit is sold.
+          example:
+            id: 10
+            name: Downtown Market
+            currency: USD
+            address:
+              address: 123 Main St
+              city: Springfield
+              country: USA
+        price:
+          type: number
+          format: float
+          minimum: 0
+          description: Price of the fruit in the store currency.
+          example: 2.49
+
+    StoreDTO:
+      type: object
+      required:
+        - name
+        - currency
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique store identifier.
+          example: 10
+        name:
+          type: string
+          minLength: 1
+          description: Store name.
+          example: Downtown Market
+        currency:
+          type: string
+          minLength: 1
+          description: ISO currency used by the store.
+          example: USD
+        address:
+          $ref: "#/components/schemas/AddressDTO"
+          description: Store postal address.
+          example:
+            address: 123 Main St
+            city: Springfield
+            country: USA
+
+    AddressDTO:
+      type: object
+      required:
+        - address
+        - city
+        - country
+      properties:
+        address:
+          type: string
+          minLength: 1
+          description: Street address line.
+          example: 123 Main St
+        city:
+          type: string
+          minLength: 1
+          description: City name.
+          example: Springfield
+        country:
+          type: string
+          minLength: 1
+          description: Country name.
+          example: USA
