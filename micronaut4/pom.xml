@@ -21,6 +21,7 @@
     <java.version>21</java.version>
     <maven.version>3.9.11</maven.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <exec.mainClass>org.acme.MicronautApplication</exec.mainClass>
 
     <micronaut.aot.enabled>false</micronaut.aot.enabled>
 
